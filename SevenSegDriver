@@ -1,0 +1,148 @@
+-------------------------------------------------------------------------------
+--
+-- Title       : No Title
+-- Design      : Radio
+-- Author      : Użytkownik systemu Windows
+-- Company     : AGH
+--
+-------------------------------------------------------------------------------
+--
+-- File        : H:\PSC\Projekt\Radio_Transmission\Radio\compile\7SegDriver.vhd
+-- Generated   : Sun Jan 13 13:41:24 2019
+-- From        : H:\PSC\Projekt\Radio_Transmission\Radio\src\7SegDriver.asf
+-- By          : FSM2VHDL ver. 5.0.7.2
+--
+-------------------------------------------------------------------------------
+--
+-- Description : 
+--
+-------------------------------------------------------------------------------
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+use IEEE.std_logic_arith.all;
+use IEEE.std_logic_unsigned.all;
+
+entity \7SegDriver\ is 
+	port (
+		Bottom: in STD_LOGIC_VECTOR (6 downto 0);
+		CE: in STD_LOGIC;
+		CLK: in STD_LOGIC;
+		CLR: in STD_LOGIC;
+		CRC1: in STD_LOGIC_VECTOR (6 downto 0);
+		CRC2: in STD_LOGIC_VECTOR (6 downto 0);
+		CRC_Display: in STD_LOGIC;
+		Upper: in STD_LOGIC_VECTOR (6 downto 0);
+		First: out STD_LOGIC;
+		Fourth: out STD_LOGIC;
+		Second: out STD_LOGIC;
+		SevenSeg: out STD_LOGIC_VECTOR (6 downto 0);
+		Third: out STD_LOGIC);
+end \7SegDriver\;
+
+architecture Behavioral of \7SegDriver\ is
+
+-- USER DEFINED ENCODED state machine: Sreg0
+attribute ENUM_ENCODING: string;
+type Sreg0_type is (
+    PostReset, BottomNibble, UpperNibble, CRCBottom, CRCUpper
+);
+attribute ENUM_ENCODING of Sreg0_type: type is
+	"000 " &		-- PostReset
+	"001 " &		-- BottomNibble
+	"010 " &		-- UpperNibble
+	"011 " &		-- CRCBottom
+	"100" ;		-- CRCUpper
+
+signal Sreg0: Sreg0_type;
+
+begin
+
+-- FSM coverage pragmas
+-- Aldec enum Machine_Sreg0 CURRENT=Sreg0
+-- Aldec enum Machine_Sreg0 INITIAL_STATE=PostReset
+-- Aldec enum Machine_Sreg0 STATES=BottomNibble,CRCBottom,CRCUpper,UpperNibble
+-- Aldec enum Machine_Sreg0 TRANS=BottomNibble->UpperNibble,CRCBottom->CRCUpper,CRCUpper->BottomNibble,PostReset->BottomNibble,UpperNibble->BottomNibble,UpperNibble->CRCBottom
+
+
+----------------------------------------------------------------------
+-- Machine: Sreg0
+----------------------------------------------------------------------
+Sreg0_machine: process (CLK)
+begin
+	if CLK'event and CLK = '1' then
+		if CLR = '1' then
+			Sreg0 <= PostReset;
+			-- Set default values for outputs, signals and variables
+			-- ...
+		else
+			if CE = '1' then
+				-- Set default values for outputs, signals and variables
+				-- ...
+				case Sreg0 is
+					when PostReset =>
+						Sreg0 <= BottomNibble;
+					when BottomNibble =>
+						Sreg0 <= UpperNibble;
+					when UpperNibble =>
+						if CRC_Display='1' then
+							Sreg0 <= CRCBottom;
+						else
+							Sreg0 <= BottomNibble;
+						end if;
+					when CRCBottom =>
+						Sreg0 <= CRCUpper;
+					when CRCUpper =>
+						Sreg0 <= BottomNibble;
+--vhdl_cover_off
+					when others =>
+						null;
+--vhdl_cover_on
+				end case;
+			end if;
+		end if;
+	end if;
+end process;
+
+-- signal assignment statements for combinatorial outputs
+SevenSeg_assignment:
+SevenSeg <= "0000001" when (Sreg0 = PostReset) else
+            Bottom when (Sreg0 = BottomNibble) else
+            Upper when (Sreg0 = UpperNibble) else
+            CRC1 when (Sreg0 = CRCBottom) else
+            CRC2 when (Sreg0 = CRCUpper) else
+            "0000001";
+
+First_assignment:
+First <= '0' when (Sreg0 = PostReset) else
+         '1' when (Sreg0 = BottomNibble) else
+         '0' when (Sreg0 = UpperNibble) else
+         '0' when (Sreg0 = CRCBottom) else
+         '0' when (Sreg0 = CRCUpper) else
+         '0';
+
+Second_assignment:
+Second <= '0' when (Sreg0 = PostReset) else
+          '0' when (Sreg0 = BottomNibble) else
+          '1' when (Sreg0 = UpperNibble) else
+          '0' when (Sreg0 = CRCBottom) else
+          '0' when (Sreg0 = CRCUpper) else
+          '0';
+
+Third_assignment:
+Third <= '0' when (Sreg0 = PostReset) else
+         '0' when (Sreg0 = BottomNibble) else
+         '0' when (Sreg0 = UpperNibble) else
+         '1' when (Sreg0 = CRCBottom) else
+         '0' when (Sreg0 = CRCUpper) else
+         '0';
+
+Fourth_assignment:
+Fourth <= '0' when (Sreg0 = PostReset) else
+          '0' when (Sreg0 = BottomNibble) else
+          '0' when (Sreg0 = UpperNibble) else
+          '0' when (Sreg0 = CRCBottom) else
+          '1' when (Sreg0 = CRCUpper) else
+          '0';
+
+end Behavioral;
