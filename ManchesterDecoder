@@ -1,0 +1,142 @@
+-------------------------------------------------------------------------------
+--
+-- Title       : No Title
+-- Design      : Radio
+-- Author      : KE
+-- Company     : AGH
+--
+-------------------------------------------------------------------------------
+--
+-- File        : H:\PSC\Projekt\Radio_Transmission\Radio\compile\ManAutomat.vhd
+-- Generated   : Sun Jan 13 13:41:34 2019
+-- From        : H:\PSC\Projekt\Radio_Transmission\Radio\src\ManAutomat.asf
+-- By          : FSM2VHDL ver. 5.0.7.2
+--
+-------------------------------------------------------------------------------
+--
+-- Description : 
+--
+-------------------------------------------------------------------------------
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+use IEEE.std_logic_arith.all;
+use IEEE.std_logic_unsigned.all;
+
+entity Manchester is 
+	port (
+		CE: in STD_LOGIC;
+		CLK: in STD_LOGIC;
+		CLR: in STD_LOGIC;
+		DataIn: in STD_LOGIC;
+		DataOut: out STD_LOGIC);
+end Manchester;
+
+architecture Manchester_arch of Manchester is
+
+-- USER DEFINED ENCODED state machine: Sreg0
+attribute ENUM_ENCODING: string;
+type Sreg0_type is (
+    ReadData, OneFRead, ZeroCorrect, ZeroFRead, ErrorTwo, OneCorrect, Error, ErrorOne
+);
+attribute ENUM_ENCODING of Sreg0_type: type is
+	"000 " &		-- ReadData
+	"001 " &		-- OneFRead
+	"101 " &		-- ZeroCorrect
+	"010 " &		-- ZeroFRead
+	"110 " &		-- ErrorTwo
+	"011 " &		-- OneCorrect
+	"111 " &		-- Error
+	"100" ;		-- ErrorOne
+
+signal Sreg0: Sreg0_type;
+
+begin
+
+-- FSM coverage pragmas
+-- Aldec enum Machine_Sreg0 CURRENT=Sreg0
+-- Aldec enum Machine_Sreg0 INITIAL_STATE=ReadData
+-- Aldec enum Machine_Sreg0 STATES=Error,ErrorOne,ErrorTwo,OneCorrect,OneFRead,ZeroCorrect,ZeroFRead
+-- Aldec enum Machine_Sreg0 TRANS=Error->ReadData,ErrorOne->Error,ErrorOne->OneFRead,ErrorOne->ZeroFRead,ErrorTwo->Error,ErrorTwo->OneFRead,ErrorTwo->ZeroFRead,OneCorrect->Error,OneCorrect->OneFRead,OneCorrect->ZeroFRead,OneFRead->ErrorOne,OneFRead->OneCorrect,ReadData->OneFRead,ReadData->ZeroFRead,ZeroCorrect->Error,ZeroCorrect->OneFRead,ZeroCorrect->ZeroFRead,ZeroFRead->ErrorTwo,ZeroFRead->ZeroCorrect
+
+
+----------------------------------------------------------------------
+-- Machine: Sreg0
+----------------------------------------------------------------------
+Sreg0_machine: process (CLK)
+begin
+	if CLK'event and CLK = '1' then
+		if CE = '1' then
+			-- Set default values for outputs, signals and variables
+			-- ...
+			case Sreg0 is
+				when ReadData =>
+					if DataIn='1' then
+						Sreg0 <= OneFRead;
+					elsif DataIn='0' then
+						Sreg0 <= ZeroFRead;
+					end if;
+				when OneFRead =>
+					if DataIn='0' then
+						Sreg0 <= OneCorrect;
+					else
+						Sreg0 <= ErrorOne;
+					end if;
+				when ZeroCorrect =>
+					if DataIn='1' then
+						Sreg0 <= OneFRead;
+					elsif DataIn='0' then
+						Sreg0 <= ZeroFRead;
+					else
+						Sreg0 <= Error;
+					end if;
+				when ZeroFRead =>
+					if DataIn='1' then
+						Sreg0 <= ZeroCorrect;
+					else
+						Sreg0 <= ErrorTwo;
+					end if;
+				when ErrorTwo =>
+					if DataIn='0' then
+						Sreg0 <= ZeroFRead;
+					elsif DataIn='1' then
+						Sreg0 <= OneFRead;
+					else
+						Sreg0 <= Error;
+					end if;
+				when OneCorrect =>
+					if DataIn='1' then
+						Sreg0 <= OneFRead;
+					elsif DataIn='0' then
+						Sreg0 <= ZeroFRead;
+					else
+						Sreg0 <= Error;
+					end if;
+				when Error =>
+					Sreg0 <= ReadData;
+				when ErrorOne =>
+					if DataIn='1' then
+						Sreg0 <= OneFRead;
+					elsif DataIn='0' then
+						Sreg0 <= ZeroFRead;
+					else
+						Sreg0 <= Error;
+					end if;
+--vhdl_cover_off
+				when others =>
+					null;
+--vhdl_cover_on
+			end case;
+		end if;
+	end if;
+end process;
+
+-- signal assignment statements for combinatorial outputs
+DataOut_assignment:
+DataOut <= '0' when (Sreg0 = ZeroCorrect) else
+           'X' when (Sreg0 = ErrorTwo) else
+           '1' when (Sreg0 = OneCorrect) else
+           'X' when (Sreg0 = Error) else
+           'X' when (Sreg0 = ErrorOne);
+
+end Manchester_arch;
