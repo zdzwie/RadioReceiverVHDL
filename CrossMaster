@@ -1,0 +1,132 @@
+-------------------------------------------------------------------------------
+--
+-- Title       : No Title
+-- Design      : Radio
+-- Author      : Użytkownik systemu Windows
+-- Company     : AGH
+--
+-------------------------------------------------------------------------------
+--
+-- File        : H:\PSC\Projekt\Radio_Transmission\Radio\compile\Cross_Master.vhd
+-- Generated   : Sun Jan 13 13:41:17 2019
+-- From        : H:\PSC\Projekt\Radio_Transmission\Radio\src\Cross_Master.asf
+-- By          : FSM2VHDL ver. 5.0.7.2
+--
+-------------------------------------------------------------------------------
+--
+-- Description : 
+--
+-------------------------------------------------------------------------------
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+use IEEE.std_logic_arith.all;
+use IEEE.std_logic_unsigned.all;
+
+entity Cross_Master is 
+	port (
+		CE: in STD_LOGIC;
+		CircularReceiver: in STD_LOGIC;
+		CLK: in STD_LOGIC;
+		CLR: in STD_LOGIC;
+		DataIN: in STD_LOGIC_VECTOR (7 downto 0);
+		BCD: out STD_LOGIC_VECTOR (7 downto 0);
+		CRC: out STD_LOGIC_VECTOR (7 downto 0);
+		CRC_CHECK: out STD_LOGIC_VECTOR (15 downto 0);
+		CRC_CHECK_RUN: out STD_LOGIC;
+		Retransmis: out STD_LOGIC);
+end Cross_Master;
+
+architecture Behavioral of Cross_Master is
+
+-- USER DEFINED ENCODED state machine: Action
+attribute ENUM_ENCODING: string;
+type Action_type is (
+    Wait_for_Preambula, DataRead, Retransmision, CRC_Read, EndTrans
+);
+attribute ENUM_ENCODING of Action_type: type is
+	"000 " &		-- Wait_for_Preambula
+	"011 " &		-- DataRead
+	"010 " &		-- Retransmision
+	"100 " &		-- CRC_Read
+	"101" ;		-- EndTrans
+
+signal Action: Action_type;
+
+begin
+
+-- FSM coverage pragmas
+-- Aldec enum Machine_Action CURRENT=Action
+-- Aldec enum Machine_Action INITIAL_STATE=Wait_for_Preambula
+-- Aldec enum Machine_Action STATES=CRC_Read,DataRead,EndTrans,Retransmision
+-- Aldec enum Machine_Action TRANS=CRC_Read->EndTrans,CRC_Read->Wait_for_Preambula,DataRead->CRC_Read,Retransmision->DataRead,Retransmision->Wait_for_Preambula,Wait_for_Preambula->DataRead,Wait_for_Preambula->Retransmision
+
+
+----------------------------------------------------------------------
+-- Machine: Action
+----------------------------------------------------------------------
+Action_machine: process (CLK)
+begin
+	if CLK'event and CLK = '1' then
+		if CLR='1' then
+			Action <= Wait_for_Preambula;
+			-- Set default values for outputs, signals and variables
+			-- ...
+		else
+			if CE = '1' then
+				-- Set default values for outputs, signals and variables
+				-- ...
+				case Action is
+					when Wait_for_Preambula =>
+						if DataIn="11011001" then
+							Action <= DataRead;
+						else
+							Action <= Retransmision;
+						end if;
+					when DataRead =>
+						Action <= CRC_Read;
+					when Retransmision =>
+						if DataIn="11011001" then
+							Action <= DataRead;
+						else
+							Action <= Wait_for_Preambula;
+						end if;
+					when CRC_Read =>
+						if CircularReceiver = '1' then
+							Action <= Wait_for_Preambula;
+						else
+							Action <= EndTrans;
+						end if;
+--vhdl_cover_off
+					when others =>
+						null;
+--vhdl_cover_on
+				end case;
+			end if;
+		end if;
+	end if;
+end process;
+
+-- signal assignment statements for combinatorial outputs
+Retransmis_assignment:
+Retransmis <= '0' when (Action = Wait_for_Preambula) else
+              '0' when (Action = DataRead) else
+              '1' when (Action = Retransmision) else
+              '0';
+
+CRC_CHECK_RUN_assignment:
+CRC_CHECK_RUN <= '0' when (Action = Wait_for_Preambula) else
+                 '1' when (Action = CRC_Read) else
+                 '0' when (Action = EndTrans) else
+                 '0';
+
+BCD_assignment:
+BCD <= DataIn when (Action = DataRead);
+
+CRC_Check_assignment:
+CRC_Check <= "11011001"&DataIn when (Action = DataRead);
+
+CRC_assignment:
+CRC <= DataIn when (Action = CRC_Read);
+
+end Behavioral;
